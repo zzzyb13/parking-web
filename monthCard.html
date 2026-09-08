@@ -4,40 +4,8 @@
 <meta charset="UTF-8">
 <title>月卡管理系统 - 月卡管理</title>
 
-<!-- 
-=====================================================================
-  【本页核心功能】 列表页
-  ┌──────────────┬───────────────────────────────────────────────────┐
-  │ 功能模块      │ 用到的知识点                                        │
-  ├──────────────┼───────────────────────────────────────────────────┤
-  │ 表格渲染      │ innerHTML模板字符串、createElement、appendChild  │
-  │ 搜索过滤      │ 数组filter()、includes()、value.trim()去空格        │
-  │ 分页          │ slice()切片、Math.ceil()、disabled禁用按钮        │
-  │ 全选/多选     │ querySelectorAll、:checked伪类选择器               │
-  │ 弹窗(Modal)   │ classList.add/remove切换.show类、fixed定位遮罩层 │
-  │ 查看详情      │ readonly输入框、getElementById填充值              │
-  │ 编辑/续费     │ hidden id、表单回填、表单校验                    │
-  │ 删除/批量删   │ filter()过滤数组、confirm()确认弹窗               │
-  │ 数据持久化    │ localStorage + JSON.stringify/parse               │
-  └──────────────┴───────────────────────────────────────────────────┘
-=====================================================================
--->
 <style>
-/* ── 【CSS选择器速查】─────────────────────────────────
-   *               通配符选择器
-   body             标签选择器
-   .sidebar         类选择器
-   .sidebar .logo    后代选择器（空格）
-   .menu-item > a    子选择器（> 只选直接子元素）
-   :hover           伪类（悬浮）
-   :focus           伪类（获得焦点）
-   :disabled        伪类（禁用状态）
-   :checked         伪类（checkbox选中）
-   ::before         伪元素（在元素前插入内容）
-   .a .b:first-child  结构性伪类
-   .a .b:last-child   结构性伪类
-   input[readonly]  属性选择器
-====================================================== */
+
 
   /* 通配符选择器 *：清除所有标签默认边距 */
   * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -123,7 +91,7 @@
      display:none 默认隐藏，加 .show 类后 display:flex 显示出来
      z-index:1000 保证在最上层 */
   .mask { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,.5); display: none; z-index: 1000; justify-content: center; align-items: center; }
-  .mask.show { display: flex; }
+   .mask.show{ display: flex; }
   .modal { background: #fff; border-radius: 6px; width: 560px; padding: 30px 36px; box-shadow: 0 4px 20px rgba(0,0,0,.15); }
   .modal h3 { font-size: 16px; color: #303133; margin-bottom: 28px; font-weight: bold; padding-bottom: 16px; border-bottom: 1px solid #ebeef5; }
 
@@ -143,7 +111,7 @@
 </head>
 <body>
   <aside class="sidebar">
-    <div class="logo">停车缴费管理系统</div>
+    <div class="logo">园区后台管理系统</div>
     <ul class="menu">
       <li class="menu-item"><a href="index.html"><span class="icon">■</span>工作台</a></li>
       <!-- onclick="toggleMenu(this)" 把当前a标签作为this传给JS函数 -->
@@ -293,19 +261,6 @@
   </div>
 
 <script>
-/* 
-=====================================================================
-  【变量说明】全局变量（整个脚本都能用）
-  
-  list        → localStorage 里读出来的全部数据（完整数组）
-  filteredList→ 搜索过滤后的数据（分页也是基于这个做的）
-  currentPage → 当前第几页（从1开始）
-  pageSize    → 每页显示几条
-  
-  数据流向：
-    localStorage → list → 搜索过滤 → filteredList → 分页slice → 渲染到tbody
-=====================================================================
-*/
 
 /* ── 菜单折叠函数 ── */
 function toggleMenu(a) {

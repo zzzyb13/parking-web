@@ -93,7 +93,7 @@
 </head>
 <body>
   <aside class="sidebar">
-    <div class="logo">停车缴费管理系统</div>
+    <div class="logo">园区后台管理系统</div>
     <ul class="menu">
       <li class="menu-item"><a href="index.html"><span class="icon">■</span>工作台</a></li>
       <li class="menu-item"><a onclick="toggleMenu(this)"><span class="icon">▢</span>园区管理<span class="arrow">›</span></a>
@@ -198,11 +198,7 @@ function toggleMenu(a) {
 /* mockData：初始化 localStorage 用 */
 const mockData = [
   { id: 1, owner: '张三', phone: '13800138000', plateNo: '京A12345', brand: '宝马', startDate: '2025-01-01', endDate: '2027-01-01', amount: 56233, payType: '微信', status: 0 },
-  { id: 2, owner: '孙笑川', phone: '17658521498', plateNo: '川B45635', brand: '演示数据111', startDate: '2024-01-01', endDate: '2030-06-01', amount: 3000, payType: '支付宝', status: 0 },
-  { id: 3, owner: '卢本伟111', phone: '13586445258', plateNo: '京A74110', brand: '演示数据', startDate: '2024-01-01', endDate: '2059-04-01', amount: 2500, payType: '现金', status: 0 },
-  { id: 4, owner: '丁真11', phone: '18652478962', plateNo: '川H45666', brand: '演示数据', startDate: '2024-01-01', endDate: '2061-11-11', amount: 2000, payType: '微信', status: 0 },
-  { id: 5, owner: '谷爱凌', phone: '15345286274', plateNo: '京A88888', brand: '演示数据', startDate: '2024-01-01', endDate: '2055-08-08', amount: 2200, payType: '支付宝', status: 0 },
-];
+]
 
 /* 显示错误提示（加 .show 类让 CSS display:block 生效）*/
 function showErr(msg) {
