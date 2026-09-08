@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>月卡管理系统 - 工作台</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: "Microsoft YaHei", "PingFang SC", Arial, sans-serif; background: #f0f2f5; color: #333; display: flex; min-height: 100vh; font-size: 14px; }
+  .sidebar { width: 220px; background: #001529; color: #fff; flex-shrink: 0; display: flex; flex-direction: column; }
+  .sidebar .logo { height: 64px; line-height: 64px; text-align: center; font-size: 22px; font-weight: bold; letter-spacing: 2px; color: #fff; border-bottom: 1px solid #0b2440; }
+  .sidebar .logo .highlight { color: #1890ff; }
+  .menu { flex: 1; list-style: none; padding-top: 8px; }
+  .menu-item > a { display: block; padding: 14px 24px; color: rgba(255,255,255,.75); text-decoration: none; cursor: pointer; transition: all .15s; font-size: 14px; }
+  .menu-item > a:hover { color: #fff; background: #1890ff; }
+  .menu-item > a.active { color: #fff; background: #1890ff; }
+  .menu-item .icon { display: inline-block; width: 18px; margin-right: 10px; text-align: center; font-size: 16px; }
+  .menu-item .arrow { float: right; font-size: 10px; margin-top: 6px; color: rgba(255,255,255,.55); transition: transform .2s; }
+  .sub-menu { list-style: none; max-height: 0; overflow: hidden; transition: max-height .25s ease; }
+  .menu-item.open .sub-menu { max-height: 400px; }
+  .sub-menu li { padding: 12px 24px 12px 52px; font-size: 13px; color: rgba(255,255,255,.55); cursor: pointer; border-left: 3px solid transparent; transition: all .15s; }
+  .sub-menu li:hover { color: #fff; background: #1890ff; }
+  .sub-menu li.active { color: #fff; background: #1890ff; border-left-color: #fff; }
+  .main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+  .header { height: 60px; background: #fff; box-shadow: 0 1px 4px rgba(0,0,0,.08); display: flex; align-items: center; padding: 0 28px; flex-shrink: 0; }
+  .header .breadcrumb { font-size: 14px; color: #333; }
+  .header .user { margin-left: auto; color: #606266; font-size: 14px; }
+  .header .user::before { content: ""; display: inline-block; width: 24px; height: 24px; background: #409EFF; border-radius: 50%; margin-right: 8px; vertical-align: middle; }
+  .content { padding: 20px 24px; flex: 1; overflow-y: auto; }
+  .row { display: flex; gap: 20px; margin-bottom: 20px; }
+  .col-main { flex: 1; background: #fff; border-radius: 4px; padding: 24px 28px; }
+  .col-side { width: 280px; background: #fff; border-radius: 4px; padding: 24px; }
+  .sec-title { font-size: 15px; font-weight: bold; color: #303133; margin-bottom: 24px; }
+  .stats-cards { display: flex; gap: 50px; }
+  .stat-item .label { color: #909399; font-size: 13px; margin-bottom: 14px; }
+  .stat-item .value { font-size: 28px; font-weight: bold; color: #303133; }
+  .entry-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px 10px; }
+  .entry-item { text-align: center; cursor: pointer; }
+  .entry-item .ebox { width: 48px; height: 48px; border-radius: 10px; margin: 0 auto 10px; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 22px; }
+  .entry-item .n { font-size: 13px; color: #606266; }
+  .placeholder { background: #fff; border-radius: 4px; padding: 24px; min-height: 160px; }
+</style>
+</head>
+<body>
+  <aside class="sidebar">
+    <div class="logo">HEIMAZ<span class="highlight">S</span></div>
+    <ul class="menu">
+      <li class="menu-item"><a href="index.html" class="active"><span class="icon">■</span>工作台</a></li>
+      <li class="menu-item"><a onclick="toggleMenu(this)"><span class="icon">▢</span>园区管理<span class="arrow">›</span></a>
+        <ul class="sub-menu"><li>园区信息</li><li>车位管理</li></ul></li>
+      <li class="menu-item"><a onclick="toggleMenu(this)"><span class="icon">⌂</span>行车管理<span class="arrow">›</span></a>
+        <ul class="sub-menu"><li>区域管理</li><li onclick="location.href='monthCard.html'">月卡管理</li><li>停车缴费管理</li><li>计费规则管理</li></ul></li>
+      <li class="menu-item"><a href="#"><span class="icon">⚙</span>物业管理</a></li>
+      <li class="menu-item"><a onclick="toggleMenu(this)"><span class="icon">▥</span>一体杆管理<span class="arrow">›</span></a>
+        <ul class="sub-menu"><li>设备管理</li><li>通行记录</li></ul></li>
+      <li class="menu-item"><a onclick="toggleMenu(this)"><span class="icon">⛭</span>系统管理<span class="arrow">›</span></a>
+        <ul class="sub-menu"><li>用户管理</li><li>角色权限</li><li>操作日志</li></ul></li>
+    </ul>
+  </aside>
+  <div class="main">
+    <header class="header"><div class="breadcrumb">工作台</div><div class="user">黑马管理员</div></header>
+    <div class="content">
+      <div class="row">
+        <div class="col-main">
+          <div class="sec-title">园区数据</div>
+          <div class="stats-cards">
+            <div class="stat-item"><div class="label">年度累计收费（元）</div><div class="value" id="totalAmount">0</div></div>
+            <div class="stat-item"><div class="label">入驻企业总数（个）</div><div class="value">6</div></div>
+            <div class="stat-item"><div class="label">月卡车辆总数（辆）</div><div class="value" id="totalCount">0</div></div>
+            <div class="stat-item"><div class="label">一体杆总数（台）</div><div class="value">48</div></div>
+          </div>
+        </div>
+        <div class="col-side">
+          <div class="sec-title">快捷入口</div>
+          <div class="entry-grid">
+            <div class="entry-item"><div class="ebox" style="background:#409EFF">□</div><div class="n">添加企业</div></div>
+            <div class="entry-item"><div class="ebox" style="background:#E6A23C">◇</div><div class="n">员工管理</div></div>
+            <div class="entry-item" onclick="location.href='addMonthCard.html'"><div class="ebox" style="background:#67C23A">◆</div><div class="n">添加账单</div></div>
+            <div class="entry-item" onclick="location.href='monthCard.html'"><div class="ebox" style="background:#409EFF">▤</div><div class="n">数据大屏</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="row">
+        <div class="placeholder" style="flex:1"><div class="sec-title">快捷入口</div></div>
+        <div class="placeholder" style="width:340px"><div class="sec-title">快捷入口</div></div>
+      </div>
+      <div class="row">
+        <div class="placeholder" style="flex:1"><div class="sec-title">快捷入口</div></div>
+      </div>
+    </div>
+  </div>
+<script>
+  function toggleMenu(a) {
+    const li = a.parentElement; li.classList.toggle('open');
+    a.querySelector('.arrow').innerText = li.classList.contains('open') ? 'ˇ' : '›';
+  }
+  const mockData = [
+    { id: 1, owner: '张三', phone: '13800138000', plateNo: '京A12345', brand: '宝马', startDate: '2025-01-01', endDate: '2027-01-01', amount: 56233, payType: '微信', status: 0 },
+    { id: 2, owner: '孙笑川', phone: '17658521498', plateNo: '川B45635', brand: '演示数据111', startDate: '2024-01-01', endDate: '2030-06-01', amount: 3000, payType: '支付宝', status: 0 },
+    { id: 3, owner: '卢本伟111', phone: '13586445258', plateNo: '京A74110', brand: '演示数据', startDate: '2024-01-01', endDate: '2059-04-01', amount: 2500, payType: '现金', status: 0 },
+    { id: 4, owner: '丁真11', phone: '18652478962', plateNo: '川H45666', brand: '演示数据', startDate: '2024-01-01', endDate: '2061-11-11', amount: 2000, payType: '微信', status: 0 },
+    { id: 5, owner: '谷爱凌', phone: '15345286274', plateNo: '京A88888', brand: '演示数据', startDate: '2024-01-01', endDate: '2055-08-08', amount: 2200, payType: '支付宝', status: 0 },
+  ];
+  function initData() {
+    if (!localStorage.getItem('monthCardData')) {
+      localStorage.setItem('monthCardData', JSON.stringify(mockData));
+    }
+  }
+  function renderHomeStat() {
+    initData();
+    const list = JSON.parse(localStorage.getItem('monthCardData') || '[]');
+    const now = new Date(); now.setHours(0,0,0,0);
+    list.forEach(item => { const end = new Date(item.endDate); end.setHours(0,0,0,0); item.status = end >= now ? 0 : 1; });
+    localStorage.setItem('monthCardData', JSON.stringify(list));
+    document.getElementById('totalCount').innerText = list.length;
+    const totalAmount = list.reduce((s,i) => s + Number(i.amount), 0);
+    document.getElementById('totalAmount').innerText = totalAmount.toLocaleString('zh-CN');
+  }
+  window.onload = renderHomeStat;
+</script>
+</body>
+</html>

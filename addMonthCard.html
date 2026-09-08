@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>月卡管理系统 - 增加月卡</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: "Microsoft YaHei", "PingFang SC", Arial, sans-serif; background: #f0f2f5; color: #333; display: flex; min-height: 100vh; font-size: 14px; }
+  .sidebar { width: 220px; background: #001529; color: #fff; flex-shrink: 0; display: flex; flex-direction: column; }
+  .sidebar .logo { height: 64px; line-height: 64px; text-align: center; font-size: 22px; font-weight: bold; letter-spacing: 2px; color: #fff; border-bottom: 1px solid #0b2440; }
+  .sidebar .logo .highlight { color: #1890ff; }
+  .menu { flex: 1; list-style: none; padding-top: 8px; }
+  .menu-item > a { display: block; padding: 14px 24px; color: rgba(255,255,255,.75); text-decoration: none; cursor: pointer; transition: all .15s; font-size: 14px; }
+  .menu-item > a:hover { color: #fff; background: #1890ff; }
+  .menu-item > a.active { color: #fff; background: #1890ff; }
+  .menu-item .icon { display: inline-block; width: 18px; margin-right: 10px; text-align: center; font-size: 16px; }
+  .menu-item .arrow { float: right; font-size: 10px; margin-top: 6px; color: rgba(255,255,255,.55); transition: transform .2s; }
+  .sub-menu { list-style: none; max-height: 0; overflow: hidden; transition: max-height .25s ease; }
+  .menu-item.open .sub-menu { max-height: 400px; }
+  .sub-menu li { padding: 12px 24px 12px 52px; font-size: 13px; color: rgba(255,255,255,.55); cursor: pointer; border-left: 3px solid transparent; transition: all .15s; }
+  .sub-menu li:hover { color: #fff; background: #1890ff; }
+  .sub-menu li.active { color: #fff; background: #1890ff; border-left-color: #fff; }
+  .main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+  .header { height: 60px; background: #fff; box-shadow: 0 1px 4px rgba(0,0,0,.08); display: flex; align-items: center; padding: 0 28px; flex-shrink: 0; }
+  .header .breadcrumb { font-size: 14px; color: #333; }
+  .header .user { margin-left: auto; color: #606266; font-size: 14px; }
+  .header .user::before { content: ""; display: inline-block; width: 24px; height: 24px; background: #409EFF; border-radius: 50%; margin-right: 8px; vertical-align: middle; }
+  .content { padding: 24px; flex: 1; overflow-y: auto; display: flex; flex-direction: column; align-items: center; }
+  .breadcrumb-top { width: 100%; max-width: 900px; font-size: 14px; color: #606266; margin-bottom: 20px; text-align: center; }
+  .breadcrumb-top a { color: #606266; text-decoration: none; }
+  .breadcrumb-top a:hover { color: #409EFF; }
+  .breadcrumb-top .sep { margin: 0 8px; color: #c0c4cc; }
+  .form-card { width: 100%; max-width: 900px; background: #fff; border-radius: 6px; margin-bottom: 20px; padding: 28px 40px; box-shadow: 0 2px 12px rgba(0,0,0,.06); }
+  .form-card h3 { font-size: 15px; font-weight: bold; color: #303133; margin-bottom: 24px; padding-left: 12px; border-left: 3px solid #409EFF; }
+  .fb { display: grid; grid-template-columns: 1fr 1fr; gap: 24px 40px; }
+  .fi { display: flex; align-items: center; }
+  .fi label { width: 100px; text-align: right; color: #606266; font-size: 14px; margin-right: 12px; flex-shrink: 0; }
+  .fi label .star { color: #F56C6C; margin-right: 2px; }
+  .fi input, .fi select { flex: 1; height: 38px; padding: 0 12px; border: 1px solid #dcdfe6; border-radius: 4px; font-size: 14px; outline: none; min-width: 0; }
+  .fi input:focus, .fi select:focus { border-color: #409EFF; }
+  .fi.full { grid-column: 1 / span 2; }
+  .fi .dr { display: flex; align-items: center; gap: 10px; flex: 1; }
+  .fi .dr input { flex: 1; min-width: 0; }
+  .fi .dr .dash { color: #909399; font-size: 14px; }
+  .err-msg { width: 100%; max-width: 900px; background: #fef0f0; color: #F56C6C; border: 1px solid #fde2e2; border-radius: 4px; padding: 10px 20px; margin-bottom: 16px; font-size: 14px; display: none; }
+  .err-msg.show { display: block; }
+  .btn-row { width: 100%; max-width: 900px; text-align: center; padding: 20px 0 40px; }
+  .btn { padding: 9px 36px; border: none; border-radius: 4px; cursor: pointer; font-size: 14px; margin: 0 12px; }
+  .btn-primary { background: #409EFF; color: #fff; }
+  .btn-primary:hover { background: #66b1ff; }
+  .btn-default { background: #fff; color: #606266; border: 1px solid #dcdfe6; }
+  .btn-default:hover { color: #409EFF; border-color: #c6e2ff; }
+</style>
+</head>
+<body>
+  <aside class="sidebar">
+    <div class="logo">HEIMAZ<span class="highlight">S</span></div>
+    <ul class="menu">
+      <li class="menu-item"><a href="index.html"><span class="icon">■</span>工作台</a></li>
+      <li class="menu-item"><a onclick="toggleMenu(this)"><span class="icon">▢</span>园区管理<span class="arrow">›</span></a>
+        <ul class="sub-menu"><li>园区信息</li><li>车位管理</li></ul></li>
+      <li class="menu-item"><a onclick="toggleMenu(this)"><span class="icon">⌂</span>行车管理<span class="arrow">›</span></a>
+        <ul class="sub-menu"><li>区域管理</li><li class="active">月卡管理</li><li>停车缴费管理</li><li>计费规则管理</li></ul></li>
+      <li class="menu-item"><a href="#"><span class="icon">⚙</span>物业管理</a></li>
+      <li class="menu-item"><a onclick="toggleMenu(this)"><span class="icon">▥</span>一体杆管理<span class="arrow">›</span></a>
+        <ul class="sub-menu"><li>设备管理</li><li>通行记录</li></ul></li>
+      <li class="menu-item"><a onclick="toggleMenu(this)"><span class="icon">⛭</span>系统管理<span class="arrow">›</span></a>
+        <ul class="sub-menu"><li>用户管理</li><li>角色权限</li><li>操作日志</li></ul></li>
+    </ul>
+  </aside>
+  <div class="main">
+    <header class="header"><div class="breadcrumb" id="pageTitle">增加月卡</div><div class="user">黑马管理员</div></header>
+    <div class="content">
+      <div class="breadcrumb-top">
+        <a href="monthCard.html">← 返回</a>
+        <span class="sep">|</span>
+        <span id="bcText">增加月卡</span>
+      </div>
+      <div class="err-msg" id="errBox"></div>
+      <div class="form-card">
+        <h3>车辆信息</h3>
+        <div class="fb">
+          <div class="fi"><label><span class="star">*</span>车主姓名：</label><input id="fOwner" placeholder="请输入车主姓名"></div>
+          <div class="fi"><label><span class="star">*</span>联系方式：</label><input id="fPhone" placeholder="请输入手机号"></div>
+          <div class="fi"><label><span class="star">*</span>车辆号码：</label><input id="fPlateNo" placeholder="例如 京A12345"></div>
+          <div class="fi"><label>车辆品牌：</label><input id="fBrand" placeholder="请输入车辆品牌"></div>
+        </div>
+      </div>
+      <div class="form-card">
+        <h3>最新一次月卡缴费信息</h3>
+        <div class="fb">
+          <div class="fi full">
+            <label><span class="star">*</span>有效期：</label>
+            <div class="dr">
+              <input id="fStart" type="date">
+              <span class="dash">至</span>
+              <input id="fEnd" type="date">
+            </div>
+          </div>
+          <div class="fi"><label><span class="star">*</span>支付金额：</label><input id="fAmount" type="number" placeholder="请输入金额"></div>
+          <div class="fi"><label><span class="star">*</span>支付方式：</label>
+            <select id="fPayType">
+              <option value="">请选择</option>
+              <option value="现金">现金</option>
+              <option value="微信">微信</option>
+              <option value="支付宝">支付宝</option>
+              <option value="银行卡">银行卡</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-default" onclick="onReset()">重置</button>
+        <button class="btn btn-primary" onclick="onSubmit()">确定</button>
+      </div>
+    </div>
+  </div>
+<script>
+  function toggleMenu(a) {
+    const li = a.parentElement; li.classList.toggle('open');
+    a.querySelector('.arrow').innerText = li.classList.contains('open') ? 'ˇ' : '›';
+  }
+  const mockData = [
+    { id: 1, owner: '张三', phone: '13800138000', plateNo: '京A12345', brand: '宝马', startDate: '2025-01-01', endDate: '2027-01-01', amount: 56233, payType: '微信', status: 0 },
+    { id: 2, owner: '孙笑川', phone: '17658521498', plateNo: '川B45635', brand: '演示数据111', startDate: '2024-01-01', endDate: '2030-06-01', amount: 3000, payType: '支付宝', status: 0 },
+    { id: 3, owner: '卢本伟111', phone: '13586445258', plateNo: '京A74110', brand: '演示数据', startDate: '2024-01-01', endDate: '2059-04-01', amount: 2500, payType: '现金', status: 0 },
+    { id: 4, owner: '丁真11', phone: '18652478962', plateNo: '川H45666', brand: '演示数据', startDate: '2024-01-01', endDate: '2061-11-11', amount: 2000, payType: '微信', status: 0 },
+    { id: 5, owner: '谷爱凌', phone: '15345286274', plateNo: '京A88888', brand: '演示数据', startDate: '2024-01-01', endDate: '2055-08-08', amount: 2200, payType: '支付宝', status: 0 },
+  ];
+  function showErr(msg) {
+    const box = document.getElementById('errBox'); box.innerText = msg; box.classList.add('show');
+  }
+  function hideErr() { document.getElementById('errBox').classList.remove('show'); }
+  function validate(d) {
+    if (!d.owner) return '请输入车主姓名';
+    if (!d.phone) return '请输入联系方式';
+    if (!d.plateNo) return '请输入车辆号码';
+    if (!d.startDate) return '请选择开始日期';
+    if (!d.endDate) return '请选择结束日期';
+    if (!d.amount) return '请输入支付金额';
+    if (!d.payType) return '请选择支付方式';
+    if (!/^1[3-9]\d{9}$/.test(d.phone)) return '手机号格式不正确（11位数字，以1开头）';
+    if (!/^[\u4e00-\u9fa5][A-Z][A-HJ-NP-Z0-9]{5,6}$/.test(d.plateNo)) return '车牌号码格式不正确（如 京A12345）';
+    if (Number(d.amount) <= 0) return '支付金额必须为正数';
+    if (new Date(d.endDate) < new Date(d.startDate)) return '结束日期不能早于开始日期';
+    return '';
+  }
+  function getFormData() {
+    return {
+      owner: document.getElementById('fOwner').value.trim(),
+      phone: document.getElementById('fPhone').value.trim(),
+      plateNo: document.getElementById('fPlateNo').value.trim(),
+      brand: document.getElementById('fBrand').value.trim(),
+      startDate: document.getElementById('fStart').value,
+      endDate: document.getElementById('fEnd').value,
+      amount: document.getElementById('fAmount').value,
+      payType: document.getElementById('fPayType').value
+    };
+  }
+  function onReset() {
+    ['fOwner','fPhone','fPlateNo','fBrand','fStart','fEnd','fAmount'].forEach(id => { document.getElementById(id).value = ''; });
+    document.getElementById('fPayType').value = ''; hideErr();
+  }
+  function onSubmit() {
+    hideErr();
+    const d = getFormData();
+    const err = validate(d);
+    if (err) { showErr(err); return; }
+    const now = new Date(); now.setHours(0,0,0,0);
+    const e = new Date(d.endDate); e.setHours(0,0,0,0);
+    const status = e >= now ? 0 : 1;
+    let list;
+    if (localStorage.getItem('monthCardData')) { list = JSON.parse(localStorage.getItem('monthCardData')); }
+    else { list = [...mockData]; }
+    const params = new URLSearchParams(location.search);
+    const editId = params.get('id');
+    if (editId) {
+      const idx = list.findIndex(i => i.id === parseInt(editId));
+      if (idx !== -1) { list[idx] = { id: list[idx].id, ...d, amount: Number(d.amount), status }; }
+    } else {
+      list.push({ id: Date.now(), ...d, amount: Number(d.amount), status });
+    }
+    localStorage.setItem('monthCardData', JSON.stringify(list));
+    alert('保存成功');
+    location.href = 'monthCard.html';
+  }
+  window.onload = () => {
+    if (!localStorage.getItem('monthCardData')) { localStorage.setItem('monthCardData', JSON.stringify(mockData)); }
+    const list = JSON.parse(localStorage.getItem('monthCardData'));
+    const params = new URLSearchParams(location.search);
+    const editId = params.get('id');
+    if (editId) {
+      document.getElementById('pageTitle').innerText = '编辑月卡';
+      document.getElementById('bcText').innerText = '编辑月卡';
+      const item = list.find(i => i.id === parseInt(editId));
+      if (item) {
+        document.getElementById('fOwner').value = item.owner;
+        document.getElementById('fPhone').value = item.phone;
+        document.getElementById('fPlateNo').value = item.plateNo;
+        document.getElementById('fBrand').value = item.brand;
+        document.getElementById('fStart').value = item.startDate;
+        document.getElementById('fEnd').value = item.endDate;
+        document.getElementById('fAmount').value = item.amount;
+        document.getElementById('fPayType').value = item.payType;
+      }
+    }
+  };
+</script>
+</body>
+</html>
