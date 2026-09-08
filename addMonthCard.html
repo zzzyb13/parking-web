@@ -2,429 +2,283 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<title>月卡管理系统 - 增加月卡</title>
-
+<title>月卡信息 - 停车缴费管理系统</title>
 
 <style>
-  /* ── 通配符选择器 * ── */
+  /* ── 全局重置 ── */
   * { margin: 0; padding: 0; box-sizing: border-box; }
-  /* body flex 横向布局 */
-  body { font-family: "Microsoft YaHei", "PingFang SC", Arial, sans-serif; background: #f0f2f5; color: #333; display: flex; min-height: 100vh; font-size: 14px; }
 
+  body { font-family: "Microsoft YaHei", Arial, sans-serif; background: #f0f2f5; color: #333; display: flex; min-height: 100vh; font-size: 14px; }
+
+  /* ── 左侧侧边栏 ── */
   .sidebar { width: 220px; background: #001529; color: #fff; flex-shrink: 0; display: flex; flex-direction: column; }
-  .sidebar .logo { height: 64px; line-height: 64px; text-align: center; font-size: 20px; font-weight: bold; color: #fff; border-bottom: 1px solid #0b2440; }
+  .sidebar .logo { height: 64px; line-height: 64px; text-align: center; font-size: 18px; font-weight: bold; border-bottom: 1px solid #0b2440; }
+  .menu { list-style: none; padding-top: 10px; }
+  .menu > li > a { display: block; padding: 14px 24px; color: rgba(255,255,255,.75); text-decoration: none; font-size: 14px; }
+  .menu > li > a:hover, .menu > li > a.active { color: #fff; background: #1890ff; }
 
-  .menu { flex: 1; list-style: none; padding-top: 8px; }
-  /* 子选择器 > 只选直接子a标签 */
-  .menu-item > a { display: block; padding: 14px 24px; color: rgba(255,255,255,.75); text-decoration: none; cursor: pointer; transition: all .15s; font-size: 14px; }
-  .menu-item > a:hover { color: #fff; background: #1890ff; }
-  .menu-item > a.active { color: #fff; background: #1890ff; }
+  /* ── 右侧主体 ── */
+  .content { flex: 1; display: flex; flex-direction: column; }
+  .header { height: 60px; background: #fff; border-bottom: 1px solid #e8e8e8; display: flex; align-items: center; padding: 0 24px; font-size: 16px; }
+  .header a { color: #1890ff; text-decoration: none; margin-right: 16px; font-size: 14px; }
+  .main { padding: 24px; max-width: 700px; margin: 0 auto; width: 100%; }
 
-  .menu-item .icon { display: inline-block; width: 18px; margin-right: 10px; text-align: center; font-size: 16px; }
-  .menu-item .arrow { float: right; font-size: 10px; margin-top: 6px; color: rgba(255,255,255,.55); transition: transform .2s; }
+  /* 白色卡片容器 */
+  .box { background: #fff; border-radius: 4px; padding: 24px; margin-bottom: 20px; box-shadow: 0 1px 4px rgba(0,0,0,.08); }
+  .box h3 { font-size: 15px; margin-bottom: 18px; padding-bottom: 10px; border-bottom: 1px solid #ebeef5; color: #303133; }
 
-  /* 子菜单折叠 */
-  .sub-menu { list-style: none; max-height: 0; overflow: hidden; transition: max-height .25s ease; }
-  .menu-item.open .sub-menu { max-height: 400px; }
-  .sub-menu li { padding: 12px 24px 12px 52px; font-size: 13px; color: rgba(255,255,255,.55); cursor: pointer; border-left: 3px solid transparent; transition: all .15s; }
-  .sub-menu li:hover { color: #fff; background: #1890ff; }
-  .sub-menu li.active { color: #fff; background: #1890ff; border-left-color: #fff; }
-
-  .main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
-  .header { height: 60px; background: #fff; box-shadow: 0 1px 4px rgba(0,0,0,.08); display: flex; align-items: center; padding: 0 28px; flex-shrink: 0; }
-  .header .breadcrumb { font-size: 14px; color: #333; }
-  .header .user { margin-left: auto; color: #606266; font-size: 14px; }
-  /* 伪元素 ::before 做头像 */
-  .header .user::before { content: ""; display: inline-block; width: 24px; height: 24px; background: #409EFF; border-radius: 50%; margin-right: 8px; vertical-align: middle; }
-
-  /* ── 页面主体：flex纵向 + 子元素水平居中 ──
-     align-items:center 让 form-card、err-msg、btn-row 都水平居中 */
-  .content { padding: 24px; flex: 1; overflow-y: auto; display: flex; flex-direction: column; align-items: center; }
-
-  /* 顶部面包屑：← 返回 | 增加月卡 */
-  .breadcrumb-top { width: 100%; max-width: 900px; font-size: 14px; color: #606266; margin-bottom: 20px; text-align: center; }
-  .breadcrumb-top a { color: #606266; text-decoration: none; }
-  .breadcrumb-top a:hover { color: #409EFF; }
-  .breadcrumb-top .sep { margin: 0 8px; color: #c0c4cc; }
-
-  /* 白色表单卡片 */
-  .form-card { width: 100%; max-width: 900px; background: #fff; border-radius: 6px; margin-bottom: 20px; padding: 28px 40px; box-shadow: 0 2px 12px rgba(0,0,0,.06); }
-  /* 左边蓝边的标题 */
-  .form-card h3 { font-size: 15px; font-weight: bold; color: #303133; margin-bottom: 24px; padding-left: 12px; border-left: 3px solid #409EFF; }
-
-  /* ── ★ Grid网格布局：2列表单 ──
-     display:grid 网格布局
-     grid-template-columns: 1fr 1fr  → 等宽2列
-     gap: 24px 40px → 行间距24px，列间距40px */
-  .fb { display: grid; grid-template-columns: 1fr 1fr; gap: 24px 40px; }
-
-  .fi { display: flex; align-items: center; }
-  .fi label { width: 100px; text-align: right; color: #606266; font-size: 14px; margin-right: 12px; flex-shrink: 0; }
-  /* .star 必填红星 */
-  .fi label .star { color: #F56C6C; margin-right: 2px; }
-  .fi input, .fi select { flex: 1; height: 38px; padding: 0 12px; border: 1px solid #dcdfe6; border-radius: 4px; font-size: 14px; outline: none; min-width: 0; }
-  /* :focus 获得焦点时边框变蓝 */
-  .fi input:focus, .fi select:focus { border-color: #409EFF; }
-
-  /* 
-    ★ grid-column: 1 / span 2 跨两列
-    有效期那一行在 .fi.full 里，需要从第1列开始，跨2列
-    相当于 flex 布局里的 width:100%
+  /*
+    ── 表单 Grid 布局 ──
+    grid-template-columns: repeat(2, 1fr) → 两列，宽度平分
+    gap: 16px → 格子之间间隔
+    知识点：CSS Grid 二维布局，适合表单这种整齐的结构
   */
-  .fi.full { grid-column: 1 / span 2; }
+  .fm { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px 20px; }
+  .fi { display: flex; flex-direction: column; }
+  .fi.full { grid-column: 1 / -1; }  /* 跨两列 */
+  .fi label { font-size: 13px; color: #606266; margin-bottom: 6px; }
+  .fi input, .fi select { height: 34px; border: 1px solid #dcdfe6; border-radius: 4px; padding: 0 10px; font-size: 14px; outline: none; }
+  /* 伪类 :focus：输入框获得焦点时的样式 */
+  .fi input:focus, .fi select:focus { border-color: #1890ff; }
+  .fi .star { color: #f56c6c; margin-right: 2px; }
 
-  /* 有效期行：两个date input 中间有个"至"字 */
-  .fi .dr { display: flex; align-items: center; gap: 10px; flex: 1; }
-  .fi .dr input { flex: 1; min-width: 0; }
-  .fi .dr .dash { color: #909399; font-size: 14px; }
+  /* 错误提示 */
+  .err { color: #f56c6c; font-size: 13px; margin-top: 10px; min-height: 20px; }
 
-  /* 错误提示：默认 display:none 隐藏，加 .show 后显示 */
-  .err-msg { width: 100%; max-width: 900px; background: #fef0f0; color: #F56C6C; border: 1px solid #fde2e2; border-radius: 4px; padding: 10px 20px; margin-bottom: 16px; font-size: 14px; display: none; }
-  .err-msg.show { display: block; }
+  /* 底部按钮 */
+  .foot { text-align: center; padding: 10px 0; }
+  button { height: 34px; padding: 0 28px; border: none; border-radius: 4px; cursor: pointer; font-size: 14px; margin: 0 8px; }
+  button.primary { background: #1890ff; color: #fff; }
+  button.primary:hover { background: #40a9ff; }
+  button.default { background: #fff; color: #606266; border: 1px solid #dcdfe6; }
+  button.default:hover { color: #1890ff; border-color: #1890ff; }
 
-  /* 底部按钮行：居中 */
-  .btn-row { width: 100%; max-width: 900px; text-align: center; padding: 20px 0 40px; }
-  .btn { padding: 9px 36px; border: none; border-radius: 4px; cursor: pointer; font-size: 14px; margin: 0 12px; }
-  .btn-primary { background: #409EFF; color: #fff; }
-  .btn-primary:hover { background: #66b1ff; }
-  .btn-default { background: #fff; color: #606266; border: 1px solid #dcdfe6; }
-  .btn-default:hover { color: #409EFF; border-color: #c6e2ff; }
+  /* 只读字段提示 */
+  .fi input[readonly] { background: #f5f7fa; color: #606266; }
 </style>
 </head>
+
 <body>
-  <aside class="sidebar">
-    <div class="logo">园区后台管理系统</div>
-    <ul class="menu">
-      <li class="menu-item"><a href="index.html"><span class="icon">■</span>工作台</a></li>
-      <li class="menu-item"><a onclick="toggleMenu(this)"><span class="icon">▢</span>园区管理<span class="arrow">›</span></a>
-        <ul class="sub-menu"><li>园区信息</li><li>车位管理</li></ul></li>
-      <li class="menu-item"><a onclick="toggleMenu(this)"><span class="icon">⌂</span>行车管理<span class="arrow">›</span></a>
-        <ul class="sub-menu"><li>区域管理</li><li class="active">月卡管理</li><li>停车缴费管理</li><li>计费规则管理</li></ul></li>
-      <li class="menu-item"><a href="#"><span class="icon">⚙</span>物业管理</a></li>
-      <li class="menu-item"><a onclick="toggleMenu(this)"><span class="icon">▥</span>一体杆管理<span class="arrow">›</span></a>
-        <ul class="sub-menu"><li>设备管理</li><li>通行记录</li></ul></li>
-      <li class="menu-item"><a onclick="toggleMenu(this)"><span class="icon">⛭</span>系统管理<span class="arrow">›</span></a>
-        <ul class="sub-menu"><li>用户管理</li><li>角色权限</li><li>操作日志</li></ul></li>
-    </ul>
-  </aside>
 
+<!-- ========== 左侧侧边栏 ========== -->
+<aside class="sidebar">
+  <div class="logo">停车缴费管理系统</div>
+  <ul class="menu">
+    <li><a href="index.html">工作台</a></li>
+    <li><a href="monthCard.html" class="active">月卡管理</a></li>
+  </ul>
+</aside>
+
+<!-- ========== 右侧主体 ========== -->
+<div class="content">
+  <div class="header">
+    <!-- 返回按钮：用 history.back() 返回上一页，或者 location.href 跳回列表 -->
+    <a href="monthCard.html">← 返回月卡列表</a>
+    <span id="pageTitle">新增月卡</span>
+  </div>
   <div class="main">
-    <!-- header 的 breadcrumb 文字会在编辑模式下被 JS 改成"编辑月卡" -->
-    <header class="header"><div class="breadcrumb" id="pageTitle">增加月卡</div><div class="user">管理员</div></header>
 
-    <div class="content">
-      <!-- 
-        顶部面包屑：
-        ← 返回  →  点了回 monthCard.html 列表
-        增加月卡 / 编辑月卡  →  JS 根据 URL 参数显示不同文字
-      -->
-      <div class="breadcrumb-top">
-        <a href="monthCard.html">← 返回</a>
-        <span class="sep">|</span>
-        <span id="bcText">增加月卡</span>
-      </div>
-
-      <!-- 错误提示框：默认隐藏，校验失败时 showErr() 加 .show 显示 -->
-      <div class="err-msg" id="errBox"></div>
-
-      <!-- 
-        ★ 表单结构：两个 .form-card 卡片
-        卡片1：车辆信息（车主、电话、车牌、品牌）
-        卡片2：月卡缴费信息（有效期、金额、支付方式）
-      -->
-      <div class="form-card">
-        <h3>车辆信息</h3>
-        <!-- 
-          .fb 是 grid 容器，子元素 .fi 是 grid item
-          一行放两个 .fi（等宽2列）
-        -->
-        <div class="fb">
-          <!-- 
-            id 命名规则：fXxx = form表单里的xxx
-            星号 <span class="star">*</span> 标记必填
-          -->
-          <div class="fi"><label><span class="star">*</span>车主姓名：</label><input id="fOwner" placeholder="请输入车主姓名"></div>
-          <div class="fi"><label><span class="star">*</span>联系方式：</label><input id="fPhone" placeholder="请输入手机号"></div>
-          <div class="fi"><label><span class="star">*</span>车辆号码：</label><input id="fPlateNo" placeholder="例如 京A12345"></div>
-          <div class="fi"><label>车辆品牌：</label><input id="fBrand" placeholder="请输入车辆品牌"></div>
+    <!-- 车辆信息卡片 -->
+    <div class="box">
+      <h3>车辆信息</h3>
+      <div class="fm">
+        <div class="fi">
+          <label><span class="star">*</span>车主姓名</label>
+          <input id="owner" placeholder="请输入姓名">
         </div>
-      </div>
-
-      <div class="form-card">
-        <h3>最新一次月卡缴费信息</h3>
-        <div class="fb">
-          <!-- 
-            .fi.full 跨两列（grid-column:1 / span 2）
-            有效期两个日期input并排
-            type="date" 浏览器原生日期选择器
-          -->
-          <div class="fi full">
-            <label><span class="star">*</span>有效期：</label>
-            <div class="dr">
-              <input id="fStart" type="date">
-              <span class="dash">至</span>
-              <input id="fEnd" type="date">
-            </div>
-          </div>
-          <div class="fi"><label><span class="star">*</span>支付金额：</label><input id="fAmount" type="number" placeholder="请输入金额"></div>
-          <div class="fi"><label><span class="star">*</span>支付方式：</label>
-            <select id="fPayType">
-              <option value="">请选择</option>
-              <option value="现金">现金</option>
-              <option value="微信">微信</option>
-              <option value="支付宝">支付宝</option>
-              <option value="银行卡">银行卡</option>
-            </select>
-          </div>
+        <div class="fi">
+          <label><span class="star">*</span>联系方式</label>
+          <input id="phone" placeholder="请输入手机号">
         </div>
-      </div>
-
-      <!-- 底部按钮 -->
-      <div class="btn-row">
-        <button class="btn btn-default" onclick="onReset()">重置</button>
-        <button class="btn btn-primary" onclick="onSubmit()">确定</button>
+        <div class="fi">
+          <label><span class="star">*</span>车辆号码</label>
+          <input id="plateNo" placeholder="如 京A12345">
+        </div>
+        <div class="fi">
+          <label>车辆品牌</label>
+          <input id="brand" placeholder="选填">
+        </div>
       </div>
     </div>
+
+    <!-- 缴费信息卡片 -->
+    <div class="box">
+      <h3>缴费信息</h3>
+      <div class="fm">
+        <!-- 日期跨两列 -->
+        <div class="fi full">
+          <label><span class="star">*</span>有效期</label>
+          <div style="display:flex; gap:10px; align-items:center;">
+            <input id="startDate" type="date">
+            <span>至</span>
+            <input id="endDate" type="date">
+          </div>
+        </div>
+        <div class="fi">
+          <label><span class="star">*</span>支付金额</label>
+          <input id="amount" type="number" placeholder="单位：元">
+        </div>
+        <div class="fi">
+          <label><span class="star">*</span>支付方式</label>
+          <select id="payType">
+            <option value="">请选择</option>
+            <option value="微信">微信</option>
+            <option value="支付宝">支付宝</option>
+            <option value="现金">现金</option>
+            <option value="银行卡">银行卡</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- 错误提示 + 按钮 -->
+    <div class="err" id="errMsg"></div>
+    <div class="foot">
+      <button class="primary" onclick="onSubmit()">确 定</button>
+      <button class="default" onclick="onReset()">重 置</button>
+    </div>
+
   </div>
+</div>
 
+<!-- ========== JavaScript ========== -->
 <script>
+  /*
+    ========== 全局变量 ==========
+    editId: 从 URL 读的 id 参数，null 表示新增模式，有值表示编辑模式
+    知识点：URLSearchParams 解析 URL 里 ?id=5 这种 query 参数
+  */
+  var list = [];
+  var editId = null;
 
-/* 菜单折叠函数（三个页面都有，复制粘贴的）*/
-function toggleMenu(a) {
-  const li = a.parentElement; li.classList.toggle('open');
-  a.querySelector('.arrow').innerText = li.classList.contains('open') ? 'ˇ' : '›';
-}
+  /*
+    localStorage 读写（和列表页一样）
+  */
+  function saveData() {
+    localStorage.setItem('monthCardData', JSON.stringify(list));
+  }
+  function loadData() {
+    var s = localStorage.getItem('monthCardData');
+    return s ? JSON.parse(s) : [];
+  }
 
-/* mockData：初始化 localStorage 用 */
-const mockData = [
-  { id: 1, owner: '张三', phone: '13800138000', plateNo: '京A12345', brand: '宝马', startDate: '2025-01-01', endDate: '2027-01-01', amount: 56233, payType: '微信', status: 0 },
-]
+  /*
+    ========== 表单校验 ==========
+    返回空字符串 '' 表示通过，返回有内容表示错误信息
+    知识点：
+      1. 正则 .test(值) → true/false
+      2. /^1\d{10}$/ → 1开头，11位数字
+      3. /^[\u4e00-\u9fa5][A-Z][A-HJ-NP-Z0-9]{5,6}$/ → 中国车牌
+  */
+  function validate(d) {
+    if (!d.owner) return '请输入车主姓名';
+    if (!d.phone) return '请输入联系方式';
+    if (!d.plateNo) return '请输入车辆号码';
+    if (!d.startDate) return '请选择开始日期';
+    if (!d.endDate) return '请选择结束日期';
+    if (!d.amount) return '请输入支付金额';
+    if (!d.payType) return '请选择支付方式';
+    if (!/^1\d{10}$/.test(d.phone)) return '手机号格式不正确（11位数字，以1开头）';
+    if (!/^[\u4e00-\u9fa5][A-Z][A-HJ-NP-Z0-9]{5,6}$/.test(d.plateNo)) return '车牌号码格式不正确（如 京A12345）';
+    if (Number(d.amount) <= 0) return '支付金额必须为正数';
+    if (new Date(d.endDate) < new Date(d.startDate)) return '结束日期不能早于开始日期';
+    return '';
+  }
 
-/* 显示错误提示（加 .show 类让 CSS display:block 生效）*/
-function showErr(msg) {
-  const box = document.getElementById('errBox');
-  box.innerText = msg;           // 把错误文字填进去
-  box.classList.add('show');     // 加 .show → display:block
-}
-/* 隐藏错误提示 */
-function hideErr() {
-  document.getElementById('errBox').classList.remove('show');
-}
+  /*
+    ========== 提交 ==========
+    流程：
+      1. 读表单值
+      2. 校验
+      3. 计算剩余天数、状态
+      4. 新增 → push 到数组；编辑 → 找到下标替换
+      5. saveData() 存 localStorage
+      6. location.href 跳回列表
+  */
+  function onSubmit() {
+    // 收集表单数据
+    var d = {
+      owner:    document.getElementById('owner').value.trim(),
+      phone:    document.getElementById('phone').value.trim(),
+      plateNo:  document.getElementById('plateNo').value.trim(),
+      brand:    document.getElementById('brand').value.trim(),
+      startDate:document.getElementById('startDate').value,
+      endDate:  document.getElementById('endDate').value,
+      amount:   document.getElementById('amount').value,
+      payType:  document.getElementById('payType').value
+    };
 
-/* 
-  ★ 表单校验函数（实验重点！）
-  
-  参数 d 是一个对象 { owner:'', phone:'', plateNo:'', ... }
-  
-  返回值：
-    - 空字符串 ''  → 校验通过
-    - 非空字符串   → 校验失败，返回错误提示
-  
-  校验规则（按顺序，第一条失败就返回）：
-  1. 必填项：车主姓名、联系方式、车牌、开始日期、结束日期、金额、支付方式
-  2. 手机号正则：/^1[3-9]\d{9}$/ 
-  3. 车牌正则：/^[\u4e00-\u9fa5][A-Z][A-HJ-NP-Z0-9]{5,6}$/
-  4. 金额必须是正数
-  5. 结束日期不能早于开始日期
-  
-  .test() 是正则对象的方法，返回 true/false
-  /pattern/.test(待测字符串)
-    /^1[3-9]\d{9}$/.test('13800138000') → true
-    /^1[3-9]\d{9}$/.test('12345') → false
-*/
-function validate(d) {
-  // 空值校验：!d.owner → owner 是空字符串/null/undefined → true → 报错
-  if (!d.owner) return '请输入车主姓名';
-  if (!d.phone) return '请输入联系方式';
-  if (!d.plateNo) return '请输入车辆号码';
-  if (!d.startDate) return '请选择开始日期';
-  if (!d.endDate) return '请选择结束日期';
-  if (!d.amount) return '请输入支付金额';
-  if (!d.payType) return '请选择支付方式';
+    // 校验
+    var err = validate(d);
+    if (err) {
+      document.getElementById('errMsg').innerText = err;
+      return;
+    }
+    document.getElementById('errMsg').innerText = '';
 
-  // 正则校验手机号
-  // ^ 开头 $ 结尾 → 整个字符串必须匹配，不能有多余字符
-  // 1 开头，第二位允许 0-9 任意，后面9位数字 → 总共11位
-  // \d 等价于 [0-9]，数字
-  // {9} 前面的字符重复9次
-  if (!/^1\d{10}$/.test(d.phone)) return '手机号格式不正确（11位数字，以1开头）';
+    // 计算状态
+    var now = new Date(); now.setHours(0,0,0,0);
+    var end = new Date(d.endDate); end.setHours(0,0,0,0);
+    d.status = end >= now ? 0 : 1;  // 0=可用 1=已过期
 
-  // 正则校验中国车牌号
-  // \u4e00-\u9fa5 = 汉字Unicode范围（省简称）
-  // [A-HJ-NP-Z0-9] = 排除了I和O（避免和1、0混淆）
-  // {5,6} = 5到6位（蓝牌5位，新能源6位）
-  if (!/^[\u4e00-\u9fa5][A-Z][A-HJ-NP-Z0-9]{5,6}$/.test(d.plateNo)) return '车牌号码格式不正确（如 京A12345）';
+    if (editId) {
+      // 编辑模式：找到下标，替换整个对象
+      var idx = list.findIndex(function(i) { return i.id === editId; });
+      if (idx !== -1) {
+        d.id = editId;
+        list[idx] = d;
+      }
+    } else {
+      // 新增模式：生成唯一 id，push 到数组
+      // Date.now() → 当前时间戳毫秒，基本不会重复
+      d.id = Date.now();
+      list.push(d);
+    }
 
-  // Number(d.amount) 把字符串转数字，<= 0 说明没填或填了负数
-  if (Number(d.amount) <= 0) return '支付金额必须为正数';
+    saveData();
+    location.href = 'monthCard.html';  // 跳回月卡列表页
+  }
 
-  // 日期对比：new Date() 可以直接比较
-  if (new Date(d.endDate) < new Date(d.startDate)) return '结束日期不能早于开始日期';
+  // 重置：清空所有输入框
+  function onReset() {
+    var inputs = document.querySelectorAll('input[type!=date], select');
+    inputs.forEach(function(i) { i.value = ''; });
+    document.getElementById('startDate').value = '';
+    document.getElementById('endDate').value = '';
+    document.getElementById('errMsg').innerText = '';
+  }
 
-  return '';  // 全部通过
-}
+  /*
+    ========== 页面加载初始化 ==========
+    知识点：URLSearchParams 解析 URL query 参数
+    如果 URL 是 addMonthCard.html?id=123 → editId = 123，编辑模式
+    如果 URL 是 addMonthCard.html → editId = null，新增模式
+  */
+  window.onload = function() {
+    list = loadData();
 
-/* 
-  从表单取值，打包成一个对象返回
-  
-  document.getElementById('fOwner').value → input的值（字符串）
-  .trim() 去首尾空格，防止用户输了一堆空格
-  
-  返回的对象刚好可以直接展开到新数据里 { ...d, status }
-*/
-function getFormData() {
-  return {
-    owner: document.getElementById('fOwner').value.trim(),
-    phone: document.getElementById('fPhone').value.trim(),
-    plateNo: document.getElementById('fPlateNo').value.trim(),
-    brand: document.getElementById('fBrand').value.trim(),
-    startDate: document.getElementById('fStart').value,
-    endDate: document.getElementById('fEnd').value,
-    amount: document.getElementById('fAmount').value,
-    payType: document.getElementById('fPayType').value
+    // 解析 URL 参数
+    var params = new URLSearchParams(location.search);
+    var idStr = params.get('id');
+
+    if (idStr) {
+      // 编辑模式：找到对应数据，回显到表单
+      editId = Number(idStr);
+      document.getElementById('pageTitle').innerText = '编辑月卡';
+      var item = list.find(function(i) { return i.id === editId; });
+      if (item) {
+        document.getElementById('owner').value = item.owner;
+        document.getElementById('phone').value = item.phone;
+        document.getElementById('plateNo').value = item.plateNo;
+        document.getElementById('brand').value = item.brand;
+        document.getElementById('startDate').value = item.startDate;
+        document.getElementById('endDate').value = item.endDate;
+        document.getElementById('amount').value = item.amount;
+        document.getElementById('payType').value = item.payType;
+      }
+    }
   };
-}
-
-/* 
-  重置表单
-  
-  技巧：['fOwner',...].forEach 减少重复代码
-  所有 id 存在数组里，循环清空
-*/
-function onReset() {
-  ['fOwner','fPhone','fPlateNo','fBrand','fStart','fEnd','fAmount'].forEach(id => {
-    document.getElementById(id).value = '';
-  });
-  document.getElementById('fPayType').value = '';
-  hideErr();
-}
-
-/* 
-  ★ 提交保存（核心逻辑！）
-  
-  区分【新增】和【编辑】的依据：URL 里有没有 ?id=xxx
-  
-  场景1：从列表点"添加月卡"过来
-    URL = addMonthCard.html  (没有 id 参数)
-    URLSearchParams 取不到 editId
-    → list.push({id: Date.now(), ...d})  追加新数据
-  
-  场景2：从列表点"编辑"过来  
-    URL = addMonthCard.html?id=5  (有 id=5)
-    URLSearchParams 取到 editId = '5'
-    → list[idx] = { ...d }  修改已有数据
-  
-  知识点：
-  - URLSearchParams 浏览器内置API，解析查询字符串
-    location.search = '?id=5'
-    new URLSearchParams(location.search).get('id') = '5'（字符串）
-    
-  - Date.now() 返回毫秒时间戳，当唯一ID
-  
-  - 对象展开运算符 { id, ...d, amount: Number(d.amount), status }
-    把 d 的所有字段展开进去，覆盖某些字段
-*/
-function onSubmit() {
-  hideErr();
-
-  // ① 取值 + 校验
-  const d = getFormData();
-  const err = validate(d);
-  if (err) { showErr(err); return; }  // 校验失败，显示错误，不往下走
-
-  // ② 计算 status（结束日期 >= 今天 可用，否则过期）
-  const now = new Date(); now.setHours(0,0,0,0);
-  const e = new Date(d.endDate); e.setHours(0,0,0,0);
-  const status = e >= now ? 0 : 1;
-
-  // ③ 读 localStorage（初始化）
-  let list;
-  if (localStorage.getItem('monthCardData')) {
-    list = JSON.parse(localStorage.getItem('monthCardData'));
-  } else {
-    list = [...mockData];  // 没有数据时用 mockData 初始化
-  }
-
-  // ④ 读 URL 参数，判断是新增还是编辑
-  const params = new URLSearchParams(location.search);
-  const editId = params.get('id');  // 有 → 编辑；null → 新增
-
-  if (editId) {
-    // ── 编辑模式 ──
-    // findIndex 找到原来那条数据的下标
-    const idx = list.findIndex(i => i.id === parseInt(editId));
-    if (idx !== -1) {
-      // 保留原来的 id，用展开运算符把新值覆盖进去
-      // 注意：id 用原来的，amount 要转 Number
-      list[idx] = { id: list[idx].id, ...d, amount: Number(d.amount), status };
-    }
-  } else {
-    // ── 新增模式 ──
-    // Date.now() 毫秒时间戳当唯一ID（简单但够用）
-    list.push({ id: Date.now(), ...d, amount: Number(d.amount), status });
-  }
-
-  // ⑤ 存回 localStorage → 提示 → 跳回列表页
-  localStorage.setItem('monthCardData', JSON.stringify(list));
-  alert('保存成功');
-  location.href = 'monthCard.html';
-}
-
-/* 
-  ★ 页面加载时的初始化
-  
-  window.onload  = 页面所有资源加载完执行
-  
-  做两件事：
-  1. 如果 localStorage 为空 → 初始化 mockData
-  2. 如果 URL 有 ?id=xxx → 编辑模式，回填数据
-  
-  回填流程：
-  URLSearchParams 取 id → list.find() 找那条数据 → 
-  把每个字段 .value = item.xxx 填到表单 input 里
-  
-  比如：monthCard.html 点了编辑按钮 → 
-  跳转 addMonthCard.html?id=3 →
-  本页面 window.onload 执行 →
-  读到 editId='3' →
-  localStorage 找到 id=3 的那条数据 →
-  把数据分别塞进 fOwner、fPhone、fPlateNo... 的 value 里
-  
-  这样用户打开页面就看到了原来的数据，可以修改
-*/
-window.onload = () => {
-  // 先保证 localStorage 有数据
-  if (!localStorage.getItem('monthCardData')) {
-    localStorage.setItem('monthCardData', JSON.stringify(mockData));
-  }
-  const list = JSON.parse(localStorage.getItem('monthCardData'));
-
-  // 读 URL 参数
-  const params = new URLSearchParams(location.search);
-  const editId = params.get('id');
-
-  if (editId) {
-    // ── 编辑模式：回填数据 ──
-    // 改页面标题文字
-    document.getElementById('pageTitle').innerText = '编辑月卡';
-    document.getElementById('bcText').innerText = '编辑月卡';
-
-    // find 找到那条数据
-    const item = list.find(i => i.id === parseInt(editId));
-    if (item) {
-      // 逐个回填到表单
-      document.getElementById('fOwner').value = item.owner;
-      document.getElementById('fPhone').value = item.phone;
-      document.getElementById('fPlateNo').value = item.plateNo;
-      document.getElementById('fBrand').value = item.brand;
-      document.getElementById('fStart').value = item.startDate;
-      document.getElementById('fEnd').value = item.endDate;
-      document.getElementById('fAmount').value = item.amount;
-      document.getElementById('fPayType').value = item.payType;
-    }
-  }
-  // 如果没有 editId → 什么都不做，保持空白表单让用户填（新增模式）
-};
 </script>
+
 </body>
 </html>
