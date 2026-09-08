@@ -3,35 +3,87 @@
 <head>
 <meta charset="UTF-8">
 <title>月卡管理系统 - 月卡管理</title>
+
+<!-- 
+=====================================================================
+  【本页核心功能】 列表页
+  ┌──────────────┬───────────────────────────────────────────────────┐
+  │ 功能模块      │ 用到的知识点                                        │
+  ├──────────────┼───────────────────────────────────────────────────┤
+  │ 表格渲染      │ innerHTML模板字符串、createElement、appendChild  │
+  │ 搜索过滤      │ 数组filter()、includes()、value.trim()去空格        │
+  │ 分页          │ slice()切片、Math.ceil()、disabled禁用按钮        │
+  │ 全选/多选     │ querySelectorAll、:checked伪类选择器               │
+  │ 弹窗(Modal)   │ classList.add/remove切换.show类、fixed定位遮罩层 │
+  │ 查看详情      │ readonly输入框、getElementById填充值              │
+  │ 编辑/续费     │ hidden id、表单回填、表单校验                    │
+  │ 删除/批量删   │ filter()过滤数组、confirm()确认弹窗               │
+  │ 数据持久化    │ localStorage + JSON.stringify/parse               │
+  └──────────────┴───────────────────────────────────────────────────┘
+=====================================================================
+-->
 <style>
+/* ── 【CSS选择器速查】─────────────────────────────────
+   *               通配符选择器
+   body             标签选择器
+   .sidebar         类选择器
+   .sidebar .logo    后代选择器（空格）
+   .menu-item > a    子选择器（> 只选直接子元素）
+   :hover           伪类（悬浮）
+   :focus           伪类（获得焦点）
+   :disabled        伪类（禁用状态）
+   :checked         伪类（checkbox选中）
+   ::before         伪元素（在元素前插入内容）
+   .a .b:first-child  结构性伪类
+   .a .b:last-child   结构性伪类
+   input[readonly]  属性选择器
+====================================================== */
+
+  /* 通配符选择器 *：清除所有标签默认边距 */
   * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  /* 标签选择器 body：页面整体 flex 横向布局 */
   body { font-family: "Microsoft YaHei", "PingFang SC", Arial, sans-serif; background: #f0f2f5; color: #333; display: flex; min-height: 100vh; font-size: 14px; }
+
   .sidebar { width: 220px; background: #001529; color: #fff; flex-shrink: 0; display: flex; flex-direction: column; }
-  .sidebar .logo { height: 64px; line-height: 64px; text-align: center; font-size: 22px; font-weight: bold; letter-spacing: 2px; color: #fff; border-bottom: 1px solid #0b2440; }
-  .sidebar .logo .highlight { color: #1890ff; }
+  .sidebar .logo { height: 64px; line-height: 64px; text-align: center; font-size: 20px; font-weight: bold; color: #fff; border-bottom: 1px solid #0b2440; }
+
   .menu { flex: 1; list-style: none; padding-top: 8px; }
+  /* 子选择器 > ：直接子a标签，不影响嵌套更深层的 */
   .menu-item > a { display: block; padding: 14px 24px; color: rgba(255,255,255,.75); text-decoration: none; cursor: pointer; transition: all .15s; font-size: 14px; }
+  /* 伪类 :hover 鼠标悬浮变色 */
   .menu-item > a:hover { color: #fff; background: #1890ff; }
   .menu-item > a.active { color: #fff; background: #1890ff; }
+
   .menu-item .icon { display: inline-block; width: 18px; margin-right: 10px; text-align: center; font-size: 16px; }
   .menu-item .arrow { float: right; font-size: 10px; margin-top: 6px; color: rgba(255,255,255,.55); transition: transform .2s; }
+
+  /* ── 子菜单折叠：max-height:0 隐藏 + JS加 .open 展开 ── */
   .sub-menu { list-style: none; max-height: 0; overflow: hidden; transition: max-height .25s ease; }
   .menu-item.open .sub-menu { max-height: 400px; }
   .sub-menu li { padding: 12px 24px 12px 52px; font-size: 13px; color: rgba(255,255,255,.55); cursor: pointer; border-left: 3px solid transparent; transition: all .15s; }
   .sub-menu li:hover { color: #fff; background: #1890ff; }
   .sub-menu li.active { color: #fff; background: #1890ff; border-left-color: #fff; }
+
   .main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
   .header { height: 60px; background: #fff; box-shadow: 0 1px 4px rgba(0,0,0,.08); display: flex; align-items: center; padding: 0 28px; flex-shrink: 0; }
   .header .breadcrumb { font-size: 14px; color: #333; }
   .header .user { margin-left: auto; color: #606266; font-size: 14px; }
+  /* 伪元素 ::before 生成头像圆点，不需要额外HTML */
   .header .user::before { content: ""; display: inline-block; width: 24px; height: 24px; background: #409EFF; border-radius: 50%; margin-right: 8px; vertical-align: middle; }
+
   .content { padding: 20px 24px; flex: 1; overflow-y: auto; }
+  
+  /* ── 搜索栏 ── */
   .search-bar { background: #fff; border-radius: 4px; padding: 20px 24px; margin-bottom: 16px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
   .search-bar label { color: #606266; margin-right: 6px; font-size: 14px; }
   .search-bar input, .search-bar select { height: 36px; padding: 0 12px; border: 1px solid #dcdfe6; border-radius: 4px; font-size: 14px; outline: none; }
+  /* :focus 伪类：输入框获得焦点时边框变蓝 */
   .search-bar input:focus, .search-bar select:focus { border-color: #409EFF; }
   .search-bar input { width: 200px; }
   .search-bar select { width: 150px; }
+
+  /* ── 按钮：公共类 .btn + 区分颜色 .btn-primary / .btn-danger / .btn-default ── */
   .btn { padding: 8px 20px; border: none; border-radius: 4px; cursor: pointer; font-size: 14px; margin-left: 8px; }
   .btn-primary { background: #409EFF; color: #fff; }
   .btn-primary:hover { background: #66b1ff; }
@@ -39,32 +91,50 @@
   .btn-danger:hover { background: #f78989; }
   .btn-default { background: #fff; color: #606266; border: 1px solid #dcdfe6; }
   .btn-default:hover { color: #409EFF; border-color: #c6e2ff; }
+  
   .toolbar { margin-bottom: 16px; }
+
+  /* ── 表格 ── */
   .table-box { background: #fff; border-radius: 4px; padding: 0 24px; }
   table { width: 100%; border-collapse: collapse; font-size: 14px; }
   thead th { padding: 16px 12px; text-align: left; color: #606266; font-weight: 600; border-bottom: 1px solid #ebeef5; background: #fafafa; }
   tbody td { padding: 16px 12px; border-bottom: 1px solid #ebeef5; color: #606266; }
+  /* tr:hover td 鼠标悬浮整行变色（后代选择器组合） */
   tbody tr:hover td { background: #f5f7fa; }
+  /* :last-child 最后一行去掉底部线 */
   tbody tr:last-child td { border-bottom: none; }
   a.op { color: #409EFF; text-decoration: none; margin-right: 16px; cursor: pointer; font-size: 13px; }
   a.op:hover { text-decoration: underline; }
   a.op:last-child { margin-right: 0; }
+
+  /* ── 分页 ── */
   .pagination { display: flex; justify-content: flex-end; align-items: center; padding: 16px 0; gap: 12px; }
   .pagination .info { color: #606266; font-size: 14px; }
   .pagination button { width: 30px; height: 30px; border: 1px solid #dcdfe6; background: #fff; border-radius: 4px; cursor: pointer; font-size: 13px; color: #606266; }
+  /* button:hover:not(:disabled) 鼠标悬浮但没被禁用时才变色（排除禁用态） */
   .pagination button:hover:not(:disabled) { color: #409EFF; border-color: #409EFF; }
   .pagination button.active { background: #409EFF; color: #fff; border-color: #409EFF; }
+  /* button:disabled 禁用态：灰色+禁止光标 */
   .pagination button:disabled { color: #c0c4cc; cursor: not-allowed; }
   .pagination select { height: 32px; border: 1px solid #dcdfe6; border-radius: 4px; padding: 0 10px; font-size: 14px; outline: none; }
+
+  /* ── 弹窗遮罩层 ──
+     position:fixed 固定在视口上，top/right/bottom/left:0 全屏覆盖
+     display:none 默认隐藏，加 .show 类后 display:flex 显示出来
+     z-index:1000 保证在最上层 */
   .mask { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,.5); display: none; z-index: 1000; justify-content: center; align-items: center; }
   .mask.show { display: flex; }
   .modal { background: #fff; border-radius: 6px; width: 560px; padding: 30px 36px; box-shadow: 0 4px 20px rgba(0,0,0,.15); }
   .modal h3 { font-size: 16px; color: #303133; margin-bottom: 28px; font-weight: bold; padding-bottom: 16px; border-bottom: 1px solid #ebeef5; }
+
+  /* ── 表单行（弹窗里用） ── */
   .fi { display: flex; align-items: center; margin-bottom: 16px; }
   .fi label { width: 100px; color: #606266; font-size: 14px; margin-right: 12px; text-align: right; flex-shrink: 0; }
   .fi input, .fi select { flex: 1; height: 36px; padding: 0 12px; border: 1px solid #dcdfe6; border-radius: 4px; font-size: 14px; outline: none; }
   .fi input:focus, .fi select:focus { border-color: #409EFF; }
+  /* 属性选择器 [readonly] 和 [disabled] ：只选有这些属性的元素 */
   .fi input[readonly], .fi select[disabled] { background: #f5f7fa; cursor: default; color: #606266; }
+
   .mf { margin-top: 28px; text-align: right; padding-top: 20px; border-top: 1px solid #ebeef5; }
   .mf button { padding: 8px 24px; border: none; border-radius: 4px; cursor: pointer; font-size: 14px; margin-left: 12px; }
   .mf .cancel { background: #fff; border: 1px solid #dcdfe6; color: #606266; }
@@ -73,11 +143,16 @@
 </head>
 <body>
   <aside class="sidebar">
-    <div class="logo">HEIMAZ<span class="highlight">S</span></div>
+    <div class="logo">停车缴费管理系统</div>
     <ul class="menu">
       <li class="menu-item"><a href="index.html"><span class="icon">■</span>工作台</a></li>
+      <!-- onclick="toggleMenu(this)" 把当前a标签作为this传给JS函数 -->
       <li class="menu-item"><a onclick="toggleMenu(this)"><span class="icon">▢</span>园区管理<span class="arrow">›</span></a>
         <ul class="sub-menu"><li>园区信息</li><li>车位管理</li></ul></li>
+      <!-- 
+        class="active" 标记当前菜单项，CSS的 .sub-menu li.active { background:#1890ff } 会高亮它
+        行车管理默认折叠（没有 open 类，箭头是›）
+      -->
       <li class="menu-item"><a onclick="toggleMenu(this)"><span class="icon">⌂</span>行车管理<span class="arrow">›</span></a>
         <ul class="sub-menu"><li>区域管理</li><li class="active">月卡管理</li><li>停车缴费管理</li><li>计费规则管理</li></ul></li>
       <li class="menu-item"><a href="#"><span class="icon">⚙</span>物业管理</a></li>
@@ -87,9 +162,13 @@
         <ul class="sub-menu"><li>用户管理</li><li>角色权限</li><li>操作日志</li></ul></li>
     </ul>
   </aside>
+
   <div class="main">
-    <header class="header"><div class="breadcrumb">月卡管理</div><div class="user">黑马管理员</div></header>
+    <header class="header"><div class="breadcrumb">月卡管理</div><div class="user">管理员</div></header>
     <div class="content">
+
+      <!-- ── 搜索栏：三个输入框 + 查询/重置按钮 ── -->
+      <!-- id 给 JS 用：document.getElementById('qPlate').value 取值 -->
       <div class="search-bar">
         <label>车牌号码：</label><input id="qPlate" placeholder="请输入内容">
         <label>车主姓名：</label><input id="qOwner" placeholder="请输入内容">
@@ -99,17 +178,25 @@
           <option value="0">可用</option>
           <option value="1">已过期</option>
         </select>
+        <!-- onclick="onSearch()" 点击按钮调用JS函数 -->
         <button class="btn btn-primary" onclick="onSearch()">查询</button>
         <button class="btn btn-danger" onclick="onReset()">重置</button>
       </div>
+
+      <!-- ── 工具栏：添加月卡 + 批量删除 ── -->
       <div class="toolbar">
+        <!-- location.href='addMonthCard.html' 跳转到添加页面 -->
         <button class="btn btn-primary" onclick="location.href='addMonthCard.html'">添加月卡</button>
         <button class="btn btn-default" onclick="onBatchDelete()">批量删除</button>
       </div>
+
+      <!-- ── 表格主体 ──
+           thead 写死表头，tbody 内容由 JS 动态生成，所以给了个空的 id="tb" -->
       <div class="table-box">
         <table>
           <thead>
             <tr>
+              <!-- 全选框 id="checkAll"，onchange="toggleAll(this)" 联动所有行的checkbox -->
               <th width="50"><input type="checkbox" id="checkAll" onchange="toggleAll(this)"></th>
               <th width="60">序号</th>
               <th>车主名称</th>
@@ -121,13 +208,19 @@
               <th width="220">操作</th>
             </tr>
           </thead>
+          <!-- tbody id="tb" 是动态渲染的目标容器 -->
           <tbody id="tb"></tbody>
         </table>
+
+        <!-- ── 分页栏 ──
+             知识点：分页 = 总条数 + 当前页 + 上一页/下一页按钮 + 每页条数选择 -->
         <div class="pagination">
           <span class="info">共 <span id="totalInfo">0</span> 条</span>
+          <!-- goPage(currentPage-1) 跳到上一页 -->
           <button onclick="goPage(currentPage-1)" id="prev"><</button>
           <button id="currPageBtn" class="active">1</button>
           <button onclick="goPage(currentPage+1)" id="next">></button>
+          <!-- onchange="changeSize()" 改变每页条数时触发 -->
           <select id="pageSizeSel" onchange="changeSize()">
             <option value="5">5条/页</option>
             <option value="10">10条/页</option>
@@ -138,6 +231,12 @@
     </div>
   </div>
 
+  <!-- 
+    ── 查看弹窗 ──
+    默认隐藏（CSS .mask { display:none }）
+    点击"查看"按钮后 JS 执行 openMask('vMask')，加 .show 类让它显示
+    里面所有输入框都是 readonly，只能看不能改
+  -->
   <div class="mask" id="vMask">
     <div class="modal">
       <h3>查看月卡</h3>
@@ -155,15 +254,24 @@
     </div>
   </div>
 
+  <!-- 
+    ── 编辑 / 续费 弹窗 ──
+    同一个弹窗复用！
+    点击"编辑"：title="编辑月卡"，所有字段可编辑
+    点击"续费"：title="续费"，车辆信息只读，只改结束日期和金额
+    hidden input 存当前编辑的 id（不让用户看到）
+  -->
   <div class="mask" id="eMask">
     <div class="modal">
       <h3 id="eTitle">编辑月卡</h3>
+      <!-- hidden 类型的 input：看不见但有值，用来传 id -->
       <input type="hidden" id="eId">
       <div class="fi"><label>车主姓名：</label><input id="eOwner"></div>
       <div class="fi"><label>联系方式：</label><input id="ePhone"></div>
       <div class="fi"><label>车牌号码：</label><input id="ePlate"></div>
       <div class="fi"><label>车辆品牌：</label><input id="eBrand"></div>
       <div class="fi"><label>开始日期：</label><input id="eStart" type="date"></div>
+      <!-- onchange="calcEModal()" 选择日期后自动计算剩余天数 -->
       <div class="fi"><label>结束日期：</label><input id="eEnd" type="date" onchange="calcEModal()"></div>
       <div class="fi"><label>支付金额：</label><input id="eAmount" type="number"></div>
       <div class="fi"><label>支付方式：</label>
@@ -174,6 +282,7 @@
           <option value="银行卡">银行卡</option>
         </select>
       </div>
+      <!-- readonly 但会被 JS 动态计算后填入 -->
       <div class="fi"><label>剩余天数：</label><input id="eRemain" readonly></div>
       <div class="fi"><label>状态：</label><input id="eStatus" readonly></div>
       <div class="mf">
@@ -184,184 +293,418 @@
   </div>
 
 <script>
-  function toggleMenu(a) {
-    const li = a.parentElement; li.classList.toggle('open');
-    a.querySelector('.arrow').innerText = li.classList.contains('open') ? 'ˇ' : '›';
+/* 
+=====================================================================
+  【变量说明】全局变量（整个脚本都能用）
+  
+  list        → localStorage 里读出来的全部数据（完整数组）
+  filteredList→ 搜索过滤后的数据（分页也是基于这个做的）
+  currentPage → 当前第几页（从1开始）
+  pageSize    → 每页显示几条
+  
+  数据流向：
+    localStorage → list → 搜索过滤 → filteredList → 分页slice → 渲染到tbody
+=====================================================================
+*/
+
+/* ── 菜单折叠函数 ── */
+function toggleMenu(a) {
+  const li = a.parentElement;     // a 的父元素 <li class="menu-item">
+  li.classList.toggle('open');     // 切换 open 类
+  a.querySelector('.arrow').innerText = li.classList.contains('open') ? 'ˇ' : '›';
+}
+
+/* 
+  计算剩余有效天数
+  
+  知识点：Date 对象
+  - new Date('2027-01-01') 把字符串转成日期对象
+  - setHours(0,0,0,0) 把时分秒清零，避免同一天不同时刻造成误差
+  - getTime() 获取1970-01-01到现在的毫秒数（时间戳）
+  - 两个时间戳相减 ÷ 86400000 = 相差多少天（1天=24×60×60×1000毫秒）
+  - Math.ceil() 向上取整
+  
+  返回值：剩余天数（≤0时返回0）
+*/
+function calcRemain(endDate) {
+  const e = new Date(endDate);
+  const now = new Date(); now.setHours(0,0,0,0);
+  const d = e.getTime() - now.getTime();
+  return d <= 0 ? 0 : Math.ceil(d / 86400000);
+}
+
+/* 
+  保存数据到 localStorage
+  封装成一个函数，因为增删改后都要存
+  JSON.stringify(list) 把数组转成字符串才能存
+*/
+function saveData() {
+  localStorage.setItem('monthCardData', JSON.stringify(list));
+}
+
+// 全局变量：初始为空数组，loadData里赋值
+let list = [], filteredList = [], currentPage = 1, pageSize = 5;
+
+/* mockData：5条初始测试数据（如果localStorage为空时用）*/
+const mockData = [
+  { id: 1, owner: '张三', phone: '13800138000', plateNo: '京A12345', brand: '宝马', startDate: '2025-01-01', endDate: '2027-01-01', amount: 56233, payType: '微信', status: 0 },
+  
+];
+
+/* 
+  加载数据
+  
+  逻辑：
+  1. 先从 localStorage 读 key="monthCardData"
+  2. 如果读不到（!data），把 mockData 存进去当初始化数据
+  3. JSON.parse 把字符串还原成 JS 数组
+  4. forEach 循环每条数据，根据结束日期自动计算 status（过期/可用）
+  5. filteredList = [...list] 展开运算符复制一份，初始搜索结果=全部
+     
+  知识点：
+  - 展开运算符 [...list] 创建数组浅拷贝，和原数组互不影响
+  - || 空值合并：'' 是 falsy，但这里用 if(!data) 更直接
+*/
+function loadData() {
+  let data = localStorage.getItem('monthCardData');
+  if (!data) {
+    localStorage.setItem('monthCardData', JSON.stringify(mockData));
+    data = localStorage.getItem('monthCardData');
   }
-  function calcRemain(endDate) {
-    const e = new Date(endDate); const now = new Date(); now.setHours(0,0,0,0);
-    const d = e.getTime() - now.getTime();
-    return d <= 0 ? 0 : Math.ceil(d / 86400000);
-  }
-  function saveData() { localStorage.setItem('monthCardData', JSON.stringify(list)); }
+  list = JSON.parse(data);
 
-  let list = [], filteredList = [], currentPage = 1, pageSize = 5;
+  // 自动更新每条数据的 status（对比结束日期和今天）
+  const now = new Date(); now.setHours(0,0,0,0);
+  list.forEach(i => {
+    const e = new Date(i.endDate); e.setHours(0,0,0,0);
+    i.status = e >= now ? 0 : 1;
+  });
+  saveData();
 
-  const mockData = [
-    { id: 1, owner: '张三', phone: '13800138000', plateNo: '京A12345', brand: '宝马', startDate: '2025-01-01', endDate: '2027-01-01', amount: 56233, payType: '微信', status: 0 },
-    { id: 2, owner: '孙笑川', phone: '17658521498', plateNo: '川B45635', brand: '演示数据111', startDate: '2024-01-01', endDate: '2030-06-01', amount: 3000, payType: '支付宝', status: 0 },
-    { id: 3, owner: '卢本伟111', phone: '13586445258', plateNo: '京A74110', brand: '演示数据', startDate: '2024-01-01', endDate: '2059-04-01', amount: 2500, payType: '现金', status: 0 },
-    { id: 4, owner: '丁真11', phone: '18652478962', plateNo: '川H45666', brand: '演示数据', startDate: '2024-01-01', endDate: '2061-11-11', amount: 2000, payType: '微信', status: 0 },
-    { id: 5, owner: '谷爱凌', phone: '15345286274', plateNo: '京A88888', brand: '演示数据', startDate: '2024-01-01', endDate: '2055-08-08', amount: 2200, payType: '支付宝', status: 0 },
-  ];
+  // 初始搜索结果 = 全部数据
+  filteredList = [...list];
+}
 
-  function loadData() {
-    let data = localStorage.getItem('monthCardData');
-    if (!data) { localStorage.setItem('monthCardData', JSON.stringify(mockData)); data = localStorage.getItem('monthCardData'); }
-    list = JSON.parse(data);
-    const now = new Date(); now.setHours(0,0,0,0);
-    list.forEach(i => { const e = new Date(i.endDate); e.setHours(0,0,0,0); i.status = e >= now ? 0 : 1; });
-    saveData();
-    filteredList = [...list];
-  }
+/* 
+  ★ 核心函数：渲染表格
+  
+  知识点综合运用：
+  1. document.getElementById('tb').innerHTML = '' 清空旧内容
+  2. slice() 数组切片做分页：pageData = filteredList.slice(start, start+pageSize)
+  3. document.createElement('tr') 动态创建HTML元素
+  4. innerHTML = `模板字符串` 用反引号拼接HTML（这是ES6模板字符串）
+  5. appendChild() 把创建的tr放到tbody里
+  6. 事件绑定在HTML字符串里：onclick="openV(${item.id})"
+  
+  三种渲染空态判断：
+  - 总数据为0 → colspan="9" 跨9列显示"暂无数据"
+  - 分页按钮禁用判断
+*/
+function renderTable() {
+  const tb = document.getElementById('tb');
+  tb.innerHTML = '';  // 先清空再重渲染（简单粗暴但有效）
 
-  function renderTable() {
-    const tb = document.getElementById('tb');
-    tb.innerHTML = '';
-    const s = (currentPage - 1) * pageSize;
-    const pageData = filteredList.slice(s, s + pageSize);
-    if (pageData.length === 0) {
-      tb.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:60px;color:#c0c4cc">暂无数据</td></tr>';
-    } else {
-      pageData.forEach((item, idx) => {
-        const tr = document.createElement('tr');
-        const statusHtml = item.status === 0 ? '可用' : '已过期';
-        tr.innerHTML = `
-          <td><input type="checkbox" class="rowC" value="${item.id}"></td>
-          <td>${s + idx + 1}</td>
-          <td>${item.owner}</td>
-          <td>${item.phone}</td>
-          <td>${item.plateNo}</td>
-          <td>${item.brand}</td>
-          <td>${calcRemain(item.endDate)}天</td>
-          <td>${statusHtml}</td>
-          <td>
-            <a class="op" onclick="openV(${item.id})">查看</a>
-            <a class="op" onclick="openR(${item.id})">续费</a>
-            <a class="op" onclick="openE(${item.id})">编辑</a>
-            <a class="op" onclick="onDel(${item.id})">删除</a>
-          </td>
-        `;
-        tb.appendChild(tr);
-      });
-    }
-    document.getElementById('totalInfo').innerText = filteredList.length;
-    document.getElementById('currPageBtn').innerText = currentPage;
-    document.getElementById('prev').disabled = currentPage <= 1;
-    document.getElementById('next').disabled = currentPage * pageSize >= filteredList.length;
-    document.getElementById('checkAll').checked = false;
-  }
+  // 分页计算：从第几条开始取，取到第几条
+  // (currentPage - 1) * pageSize = 跳过前面页的条数
+  const s = (currentPage - 1) * pageSize;
+  // slice(a, b) 从下标a取到下标b（不包含b），返回新数组
+  const pageData = filteredList.slice(s, s + pageSize);
 
-  function onSearch() {
-    const plate = document.getElementById('qPlate').value.trim();
-    const owner = document.getElementById('qOwner').value.trim();
-    const st = document.getElementById('qStatus').value;
-    filteredList = list.filter(i => {
-      if (plate && !i.plateNo.includes(plate)) return false;
-      if (owner && !i.owner.includes(owner)) return false;
-      if (st !== '' && String(i.status) !== st) return false;
-      return true;
+  if (pageData.length === 0) {
+    // 空状态：colspan="9" 让一个td跨满整行
+    tb.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:60px;color:#c0c4cc">暂无数据</td></tr>';
+  } else {
+    // forEach 遍历当前页的每条数据
+    pageData.forEach((item, idx) => {
+      const tr = document.createElement('tr');
+
+      // 三元表达式：status===0显示"可用"否则"已过期"
+      const statusHtml = item.status === 0 ? '可用' : '已过期';
+
+      // 模板字符串（反引号）里可以直接 ${变量} 插值
+      // idx 是当前页内的下标（0开始），s 是偏移量，所以序号 = s + idx + 1
+      tr.innerHTML = `
+        <td><input type="checkbox" class="rowC" value="${item.id}"></td>
+        <td>${s + idx + 1}</td>
+        <td>${item.owner}</td>
+        <td>${item.phone}</td>
+        <td>${item.plateNo}</td>
+        <td>${item.brand}</td>
+        <td>${calcRemain(item.endDate)}天</td>
+        <td>${statusHtml}</td>
+        <td>
+          <!-- onclick里直接传item.id，number类型会自动转成字符串 -->
+          <a class="op" onclick="openV(${item.id})">查看</a>
+          <a class="op" onclick="openR(${item.id})">续费</a>
+          <a class="op" onclick="openE(${item.id})">编辑</a>
+          <a class="op" onclick="onDel(${item.id})">删除</a>
+        </td>
+      `;
+      tb.appendChild(tr);  // 把tr放到tbody里
     });
-    currentPage = 1; renderTable();
-  }
-  function onReset() {
-    document.getElementById('qPlate').value = '';
-    document.getElementById('qOwner').value = '';
-    document.getElementById('qStatus').value = '';
-    filteredList = [...list]; currentPage = 1; renderTable();
-  }
-  function goPage(p) {
-    const totalPage = Math.ceil(filteredList.length / pageSize) || 1;
-    if (p < 1 || p > totalPage) return;
-    currentPage = p; renderTable();
-  }
-  function changeSize() { pageSize = parseInt(document.getElementById('pageSizeSel').value); currentPage = 1; renderTable(); }
-  function toggleAll(cb) { document.querySelectorAll('.rowC').forEach(c => c.checked = cb.checked); }
-  function onBatchDelete() {
-    const ids = []; document.querySelectorAll('.rowC:checked').forEach(c => ids.push(parseInt(c.value)));
-    if (!ids.length) { alert('请至少勾选一条记录'); return; }
-    if (!confirm(`确认删除选中的 ${ids.length} 条数据？`)) return;
-    list = list.filter(i => !ids.includes(i.id)); saveData(); onSearch();
-  }
-  function closeMask(id) { document.getElementById(id).classList.remove('show'); }
-  function openMask(id) { document.getElementById(id).classList.add('show'); }
-
-  function openV(id) {
-    const it = list.find(i => i.id === id); if (!it) return;
-    document.getElementById('vOwner').value = it.owner;
-    document.getElementById('vPhone').value = it.phone;
-    document.getElementById('vPlate').value = it.plateNo;
-    document.getElementById('vBrand').value = it.brand;
-    document.getElementById('vStart').value = it.startDate;
-    document.getElementById('vEnd').value = it.endDate;
-    document.getElementById('vAmount').value = it.amount;
-    document.getElementById('vPayType').value = it.payType;
-    document.getElementById('vRemain').value = calcRemain(it.endDate) + '天';
-    document.getElementById('vStatus').value = it.status === 0 ? '可用' : '已过期';
-    openMask('vMask');
   }
 
-  function setReadOnlyVehicle(readOnly) {
-    ['eOwner', 'ePhone', 'ePlate', 'eBrand', 'eStart'].forEach(id => { document.getElementById(id).readOnly = readOnly; });
-  }
+  // 更新分页信息
+  document.getElementById('totalInfo').innerText = filteredList.length;
+  document.getElementById('currPageBtn').innerText = currentPage;
 
-  function fillEditForm(it) {
-    document.getElementById('eId').value = it.id;
-    document.getElementById('eOwner').value = it.owner;
-    document.getElementById('ePhone').value = it.phone;
-    document.getElementById('ePlate').value = it.plateNo;
-    document.getElementById('eBrand').value = it.brand;
-    document.getElementById('eStart').value = it.startDate;
-    document.getElementById('eEnd').value = it.endDate;
-    document.getElementById('eAmount').value = it.amount;
-    document.getElementById('ePayType').value = it.payType;
-    calcEModal();
-  }
+  // 上一页按钮：当前页 <=1 时禁用（不能再往前翻）
+  document.getElementById('prev').disabled = currentPage <= 1;
+  // 下一页按钮：当前页 × 每页条数 >= 总条数 时禁用（已经最后一页了）
+  document.getElementById('next').disabled = currentPage * pageSize >= filteredList.length;
 
-  function openE(id) {
-    const it = list.find(i => i.id === id); if (!it) return;
-    document.getElementById('eTitle').innerText = '编辑月卡';
-    setReadOnlyVehicle(false);
-    fillEditForm(it);
-    openMask('eMask');
-  }
-  function openR(id) {
-    const it = list.find(i => i.id === id); if (!it) return;
-    document.getElementById('eTitle').innerText = '续费';
-    setReadOnlyVehicle(true);
-    fillEditForm(it);
-    openMask('eMask');
-  }
-  function calcEModal() {
-    const v = document.getElementById('eEnd').value;
-    if (!v) { document.getElementById('eRemain').value = ''; document.getElementById('eStatus').value = ''; return; }
-    document.getElementById('eRemain').value = calcRemain(v) + '天';
-    const now = new Date(); now.setHours(0,0,0,0);
-    const e = new Date(v); e.setHours(0,0,0,0);
-    document.getElementById('eStatus').value = e >= now ? '可用' : '已过期';
-  }
-  function saveE() {
-    const id = parseInt(document.getElementById('eId').value);
-    const idx = list.findIndex(i => i.id === id); if (idx === -1) return;
-    list[idx].owner = document.getElementById('eOwner').value;
-    list[idx].phone = document.getElementById('ePhone').value;
-    list[idx].plateNo = document.getElementById('ePlate').value;
-    list[idx].brand = document.getElementById('eBrand').value;
-    list[idx].startDate = document.getElementById('eStart').value;
-    list[idx].endDate = document.getElementById('eEnd').value;
-    list[idx].amount = document.getElementById('eAmount').value;
-    list[idx].payType = document.getElementById('ePayType').value;
-    const now = new Date(); now.setHours(0,0,0,0);
-    const e = new Date(list[idx].endDate); e.setHours(0,0,0,0);
-    list[idx].status = e >= now ? 0 : 1;
-    saveData(); closeMask('eMask'); renderTable();
-  }
-  function onDel(id) {
-    if (!confirm('确认删除该条数据？')) return;
-    list = list.filter(i => i.id !== id); saveData(); renderTable();
-  }
+  // 每次刷新清空全选框
+  document.getElementById('checkAll').checked = false;
+}
 
-  window.onload = () => { loadData(); renderTable(); };
+/* 
+  搜索过滤
+  
+  知识点：数组.filter()
+  filter 遍历数组每个元素，返回 true 的留下，返回 false 的过滤掉
+  
+  includes()：字符串包含判断（模糊搜索）
+  空值判断：if (plate && !i.plateNo.includes(plate)) → 有输入但不匹配才排除
+  
+  这里 plate 是字符串，i.plateNo 也是字符串
+  includes 返回 true/false：
+    '京A12345'.includes('A123') → true（包含）
+    '京A12345'.includes('B678') → false（不包含）
+*/
+function onSearch() {
+  // .value.trim() 取输入框的值并去掉首尾空格
+  const plate = document.getElementById('qPlate').value.trim();
+  const owner = document.getElementById('qOwner').value.trim();
+  const st = document.getElementById('qStatus').value;
+
+  // filter 过滤：同时满足三个条件（或没有该条件输入）才留下
+  filteredList = list.filter(i => {
+    if (plate && !i.plateNo.includes(plate)) return false;
+    if (owner && !i.owner.includes(owner)) return false;
+    if (st !== '' && String(i.status) !== st) return false;
+    return true;
+  });
+
+  // 搜索完重置到第1页
+  currentPage = 1;
+  renderTable();
+}
+
+/* 重置：清空输入框，恢复全部数据 */
+function onReset() {
+  document.getElementById('qPlate').value = '';
+  document.getElementById('qOwner').value = '';
+  document.getElementById('qStatus').value = '';
+  filteredList = [...list];   // 展开运算符复制全部
+  currentPage = 1;
+  renderTable();
+}
+
+/* 
+  翻页
+  
+  Math.ceil() 向上取整：总条数7条，每页5条 → 7/5=1.4 → 共2页
+  边界保护：if (p < 1 || p > totalPage) return 超出范围直接不操作
+*/
+function goPage(p) {
+  const totalPage = Math.ceil(filteredList.length / pageSize) || 1;
+  if (p < 1 || p > totalPage) return;
+  currentPage = p;
+  renderTable();
+}
+
+/* 改变每页条数时触发：从select取值，重置到第1页 */
+function changeSize() {
+  pageSize = parseInt(document.getElementById('pageSizeSel').value);
+  currentPage = 1;
+  renderTable();
+}
+
+/* 
+  全选 / 取消全选
+  
+  querySelectorAll('.rowC') → 找到所有 class="rowC" 的 checkbox
+  forEach(c => c.checked = cb.checked) → 把全选框的状态赋给每一行
+  知识点：DOM 批量操作 + 伪类/属性选择器配合
+*/
+function toggleAll(cb) {
+  document.querySelectorAll('.rowC').forEach(c => c.checked = cb.checked);
+}
+
+/* 
+  批量删除
+  
+  querySelectorAll('.rowC:checked') → 找所有被选中的checkbox（:checked是CSS伪类）
+  confirm() 浏览器原生弹窗，点确定返回 true，取消返回 false
+  list.filter(i => !ids.includes(i.id)) → 过滤掉选中id的那条数据
+  
+  includes(id) 判断数组里有没有这个id
+  前面加 ! = 取反：ids 里有这个 id → !true → false → 这条被 filter 排除掉
+*/
+function onBatchDelete() {
+  const ids = [];
+  // document.querySelectorAll 返回 NodeList，forEach 遍历每个选中的checkbox
+  document.querySelectorAll('.rowC:checked').forEach(c => ids.push(parseInt(c.value)));
+  if (!ids.length) { alert('请至少勾选一条记录'); return; }
+  if (!confirm(`确认删除选中的 ${ids.length} 条数据？`)) return;
+
+  // filter 排除 ids 里包含的 id
+  list = list.filter(i => !ids.includes(i.id));
+  saveData();    // 存回localStorage
+  onSearch();    // 用当前搜索条件重新过滤并渲染
+}
+
+/* 关闭弹窗：移除 .show 类，让 CSS display:none 生效 */
+function closeMask(id) { document.getElementById(id).classList.remove('show'); }
+/* 打开弹窗：添加 .show 类，让 CSS display:flex 生效 */
+function openMask(id) { document.getElementById(id).classList.add('show'); }
+
+/* 
+  查看弹窗
+  
+  list.find(i => i.id === id) → 在数组里找 id 匹配的那一条
+  如果没找到返回 undefined，加 if(!it) return 防止后续代码报错
+  
+  然后把每条字段通过 getElementById('vXxx').value = item.xxx 填到 readonly 输入框里
+  所有 vXxx id 对应 HTML 里 vMask 弹窗内的输入框
+*/
+function openV(id) {
+  const it = list.find(i => i.id === id); if (!it) return;
+  document.getElementById('vOwner').value = it.owner;
+  document.getElementById('vPhone').value = it.phone;
+  document.getElementById('vPlate').value = it.plateNo;
+  document.getElementById('vBrand').value = it.brand;
+  document.getElementById('vStart').value = it.startDate;
+  document.getElementById('vEnd').value = it.endDate;
+  document.getElementById('vAmount').value = it.amount;
+  document.getElementById('vPayType').value = it.payType;
+  document.getElementById('vRemain').value = calcRemain(it.endDate) + '天';
+  document.getElementById('vStatus').value = it.status === 0 ? '可用' : '已过期';
+  openMask('vMask');
+}
+
+/* 
+  设置表单只读
+  
+  续费模式下：车辆信息不能改（setReadOnly(true)），只能改结束日期和金额
+  编辑模式下：所有字段都能改（setReadOnly(false)）
+  
+  ['eOwner', ...].forEach 循环处理多个id，减少重复代码
+*/
+function setReadOnlyVehicle(readOnly) {
+  ['eOwner', 'ePhone', 'ePlate', 'eBrand', 'eStart'].forEach(id => {
+    document.getElementById(id).readOnly = readOnly;
+  });
+}
+
+/* 
+  把一条记录的数据填入编辑/续费弹窗
+  
+  eId 存到 hidden input，保存时靠它知道改的是哪条
+*/
+function fillEditForm(it) {
+  document.getElementById('eId').value = it.id;
+  document.getElementById('eOwner').value = it.owner;
+  document.getElementById('ePhone').value = it.phone;
+  document.getElementById('ePlate').value = it.plateNo;
+  document.getElementById('eBrand').value = it.brand;
+  document.getElementById('eStart').value = it.startDate;
+  document.getElementById('eEnd').value = it.endDate;
+  document.getElementById('eAmount').value = it.amount;
+  document.getElementById('ePayType').value = it.payType;
+  calcEModal();  // 自动计算剩余天数和状态
+}
+
+/* 编辑模式 */
+function openE(id) {
+  const it = list.find(i => i.id === id); if (!it) return;
+  document.getElementById('eTitle').innerText = '编辑月卡';
+  setReadOnlyVehicle(false);    // 所有字段可编辑
+  fillEditForm(it);
+  openMask('eMask');
+}
+
+/* 续费模式：同一个弹窗，只是 title 变了 + 部分字段只读 */
+function openR(id) {
+  const it = list.find(i => i.id === id); if (!it) return;
+  document.getElementById('eTitle').innerText = '续费';
+  setReadOnlyVehicle(true);     // 车辆信息只读
+  fillEditForm(it);
+  openMask('eMask');
+}
+
+/* 
+  编辑/续费弹窗里计算剩余天数和状态
+  
+  绑定在 eEnd 的 onchange 上：用户选完结束日期自动算
+  也在 fillEditForm 里调用：回填数据时同步计算
+  
+  日期字符串 → Date → 设时分秒为0 → 和今天比
+*/
+function calcEModal() {
+  const v = document.getElementById('eEnd').value;
+  if (!v) { document.getElementById('eRemain').value = ''; document.getElementById('eStatus').value = ''; return; }
+  document.getElementById('eRemain').value = calcRemain(v) + '天';
+  const now = new Date(); now.setHours(0,0,0,0);
+  const e = new Date(v); e.setHours(0,0,0,0);
+  document.getElementById('eStatus').value = e >= now ? '可用' : '已过期';
+}
+
+/* 
+  ★ 保存编辑/续费
+  
+  findIndex 找到数组里这条数据的下标（idx）
+  list[idx].xxx = 新值 → 直接修改数组对象的属性
+  
+  最后：saveData() 存localStorage → closeMask() 关弹窗 → renderTable() 刷新表格
+*/
+function saveE() {
+  const id = parseInt(document.getElementById('eId').value);
+  const idx = list.findIndex(i => i.id === id); if (idx === -1) return;
+
+  // 从表单读值，写回数组对象
+  list[idx].owner = document.getElementById('eOwner').value;
+  list[idx].phone = document.getElementById('ePhone').value;
+  list[idx].plateNo = document.getElementById('ePlate').value;
+  list[idx].brand = document.getElementById('eBrand').value;
+  list[idx].startDate = document.getElementById('eStart').value;
+  list[idx].endDate = document.getElementById('eEnd').value;
+  list[idx].amount = document.getElementById('eAmount').value;
+  list[idx].payType = document.getElementById('ePayType').value;
+
+  // 重新计算状态
+  const now = new Date(); now.setHours(0,0,0,0);
+  const e = new Date(list[idx].endDate); e.setHours(0,0,0,0);
+  list[idx].status = e >= now ? 0 : 1;
+
+  saveData();        // 存 localStorage
+  closeMask('eMask');
+  renderTable();
+}
+
+/* 
+  删除单条
+  
+  confirm 确认弹窗
+  list.filter(i => i.id !== id) → 保留所有 id !== 要删id 的项，等于排除那条
+*/
+function onDel(id) {
+  if (!confirm('确认删除该条数据？')) return;
+  list = list.filter(i => i.id !== id);
+  saveData();
+  filteredList = filteredList.filter(i => i.id !== id);
+  renderTable();
+}
+
+/* 
+  页面加载完成时执行初始化
+  
+  window.onload = () => { ... } 箭头函数写法，等价于 function(){}
+  
+  先 loadData 从 localStorage 读数据
+  再 renderTable 把数据渲染到 tbody 里
+*/
+window.onload = () => { loadData(); renderTable(); };
 </script>
 </body>
 </html>
