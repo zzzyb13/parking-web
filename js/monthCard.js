@@ -33,7 +33,7 @@ function renderTable() {
   if (currentPage > totalPage) currentPage = totalPage; // 确保当前页不超出范围
 
   var s = (currentPage - 1) * pageSize; // 计算当前页的起始索引
-  var pageData = filteredList.slice(s, s + pageSize); // 从 filteredList 中提取当前页数据
+  var pageData = filteredList.slice(s, s + pageSize); // 获得当前页数据
 
   if (pageData.length === 0) { // 如果当前页没有数据
     tb.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:60px;color:#c0c4cc">暂无数据</td></tr>';
